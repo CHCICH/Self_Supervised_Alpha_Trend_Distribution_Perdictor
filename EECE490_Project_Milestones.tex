@@ -1,0 +1,207 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern,amsmath,amssymb,microtype}
+\usepackage[letterpaper,top=.86in,bottom=.83in,left=.85in,right=.85in]{geometry}
+\usepackage{fancyhdr}
+\setlength{\headheight}{13pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+\linespread{1.07}
+\raggedbottom
+\setlength{\abovedisplayskip}{6pt}
+\setlength{\belowdisplayskip}{6pt}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\footnotesize\textbf{EECE 490 / RESEARCH PROJECT}}
+\fancyhead[R]{\footnotesize PROJECT ROADMAP}
+\fancyfoot[L]{\footnotesize MARKET TREND SEGMENT FORECASTING}
+\fancyfoot[R]{\footnotesize\thepage}
+\renewcommand{\footrulewidth}{0.4pt}
+\newcommand{\pagetitle}[2]{\vspace*{9pt}{\small\bfseries #1\par}\vspace{5pt}{\LARGE\bfseries #2\par}\vspace{9pt}}
+\newcommand{\topic}[1]{\par\smallskip{\large\bfseries #1\par}}
+\newcommand{\checkrow}[3]{\par\smallskip\hrule\smallskip\noindent\(\square\)\enspace\textbf{#1\quad #2}\par\hspace*{14pt}#3\par}
+\begin{document}
+\pagetitle{PROJECT OVERVIEW}{Project milestones}
+{\large Probabilistic Forecasting of Future Market Trends\\ and Volatility Envelopes\par}
+
+\topic{Research objective}
+Use market data available at the after-close origin \(t\) to forecast fitted slope, remaining duration and direction through the first admissible future knot \(b\). A separate secondary benchmark forecasts fixed-horizon returns. Later milestones extend the analysis to multiple horizons, complete subsequent segments and conditional uncertainty.
+
+\topic{Proposal evidence}
+Sections 1-4 and Figure 1 motivate cross-market latent regimes, potentially asymmetric envelopes and non-Gaussian outcomes. The initial dataset is 501 daily OHLCV observations each for SPY and QQQ (October 21, 2024 to October 20, 2026). Figures 2-3 and Table 2 show an April 2025 drop and recovery and greater daily return dispersion for QQQ. Gold and FX are conceptual inputs in Figure 1.
+
+\topic{Model and evaluation commitments}
+Sections 3 and 5 and Table 1 motivate latent prediction, temporal contrastive learning, conditioned flows, neural SDEs and cross-asset models. Section 6 and Table 3 specify chronological 75/15/10 splits, train-only preprocessing, boundary controls, an untouched test, a polynomial comparator, a raw-OHLCV ablation, and calm versus high-volatility analysis. Required metrics include directional accuracy, net PnL and maximum drawdown.
+
+\topic{Complete research workflow}
+\textbf{I. Specification and data}\\ M1 Forecast contract and labels \(\rightarrow\) M2 Data audit and split freeze.
+
+\textbf{II. Reproducible baselines}\\ M3 Linear, logistic and polynomial regression \(\rightarrow\) M4 LSTM \(\rightarrow\) M5 Autoencoder.
+
+\textbf{III. Predictive representations}\\ M6 Point-forecast JEPA and matched ablations.
+
+\textbf{IV. Uncertainty and evaluation}\\ M7 Distributions and envelopes \(\rightarrow\) M8 Locked test and research outputs.
+
+\topic{Execution protocol}
+Complete one milestone at a time. Review its code or specification, tests, figures, limitations and decision record. This sequence adapts the proposal schedule in Sections 7-8 and Table 4. The candidate methods in this PDF are subject to review.
+
+\smallskip{\small Primary source: Sobh, El Haddad and Abdul Sater, EECE 490 project proposal, pp.~1--4.\\ Companion files: \texttt{ROADMAP.md} and \texttt{RESEARCH\_DECISIONS.md}.\par}
+
+
+\clearpage
+
+\pagetitle{PHASE I / A}{Forecast specification}
+
+\topic{01\quad Specify the forecast and the labels}
+
+\textbf{Objective.} Define the immediate fitted movement from the after-close forecast origin \(t\) to the first admissible future fitted knot \(b>t\).\par
+
+\textbf{Work and decisions.} Write a formal contract for the information set \(\mathcal F_t\), the price transform, forecast issuance and earliest trade time, anchor, horizon and label maturity. Select the first knot \(t<b\le U=t+H-g\). Define remaining duration \(d_t=b-t\) and slope \(s_t=(\widehat x_b^{(t)}-\widehat x_t^{(t)})/d_t\). Specify the flat band, right-censoring and maturity \(m(t)=t+H\). Keep fitted labels separate from causal features and executable returns. Document the secondary fixed-horizon return benchmark and distinguish it from later multi-horizon trend forecasts. Review the proposal's cited trend filtering and boundary methods [12, 15]. Use the candidate formulation and open questions in D01--D04.\par
+
+\textbf{Deliverables.} Label/evaluation design note, hand-worked examples and timeline diagrams for up, down, flat, unchanged, boundary-crossing and censored cases. Record expected label and maturity time for each example. This milestone is specification work.\par
+
+\textbf{Depends on.} Project roadmap.\par
+
+\textbf{Acceptance.} The same example yields one reproducible interpretation from its written rules. Every target has units, an origin, a last required bar and an eligibility rule. The protocol explains how overlapping labels, retrospective knots and right censoring are handled. Define the initial task and the mapping to the later multi-horizon task.\par
+
+\topic{Illustrative target}
+
+For \(t=100\) and the first admissible knot \(b=104\), the target spans sessions 100 to 104. Its remaining duration is \(4\) sessions. With \(H=30\), the fitted label matures at 130.
+
+\clearpage
+
+\pagetitle{PHASE I / B}{Data, stability and split design}
+
+\topic{02\quad Collect, audit and freeze the data and split protocol}
+
+\textbf{Objective.} Establish reproducible inputs and determine how much usable evidence the project has.\par
+
+\textbf{Work and decisions.} Build a versioned ingest and snapshot pipeline, the specified immediate-movement labeler and chronological 75/15/10 split manifests. Record source, dates, adjustment flags, calendar, timezone, hashes and package version. Reproduce proposal Figs. 2--3 and Table 2 where the preliminary snapshot can be recovered. Fit preprocessing and select label settings on permissible training data.\par
+
+\textbf{Dataset audit.} Investigate daily SPY and QQQ histories from January 1, 2010 through the latest completed trading session available in 2026 at the snapshot date. Treat these dates as a candidate range. Verify provider availability, session coverage, raw and adjusted price conventions, corporate actions, missing or duplicate bars, OHLC consistency and adjustment-vintage limits. Compare the expanded candidate with the proposal's 501 observations per ETF under the same label protocol. Record coverage and counts on permissible development data and use only anticipated support for the locked test.\par
+
+\textbf{Label-stability diagnostics.} On training/design data, predeclare sweeps of the smoothing penalty \(\lambda\), historical support \(B\), future support \(H\) and knot tolerance \(\tau\). Compare configurations on common eligible origins and report each configuration's own coverage. Separately compare neighboring origins, such as 100 on bars 81--130 and 101 on bars 82--131. Use a common comparison interval strictly after both origins and no later than either endpoint cutoff. Report pairs separately when a boundary has already passed the later origin or lies outside the common interval. For the remaining pairs, report exact boundary disagreement among pairs with two comparable boundaries, absolute shifts in sessions, and changes between completion and censoring with counts and denominators. Summarize slope, remaining duration and direction changes under the sensitivity sweeps.\par
+
+\textbf{Sample accounting.} Tabulate eligible, completed, censored and purged origins and Up/Down/Flat counts by ETF and development fold. Report distinct fitted episodes alongside origin counts using a documented grouping rule, with exact terminal dates as an auditable proxy and a sensitivity check for nearby boundaries. A fitted episode can yield several origins with different durations. Overlapping windows and shared ETF shocks limit the number of independent examples.\par
+
+\textbf{Deliverables.} Data and label code, deterministic and boundary fixtures, snapshot and split manifests, a causal availability ledger, and a dataset and label-stability report. Include overlaid adjacent-window fits with knots, a sensitivity grid or heatmap, distributions of boundary shifts and label attributes, and a sample sufficiency table for both histories.\par
+
+\textbf{Depends on.} Defined label contract in M1.\par
+
+\textbf{Acceptance.} A rerun reproduces manifests and labels. Fixtures cover stable and shifted adjacent knots, exact eligibility, right-censoring, split purges and invariance to observations outside declared support. The report contains the parameter sweeps, boundary disagreement and shift diagnostics with explicit denominators, completion and censoring rates, distinct episode and origin counts, and directional-class balance. Document the dataset and label settings chosen from this evidence, or narrow the experiment if support is insufficient (D02--D06). Keep the test locked.\par
+
+\clearpage
+
+\pagetitle{PHASE II / A}{Classical baselines}
+
+\topic{03\quad Establish reproducible classical baselines}
+
+\textbf{Objective.} Measure how much predictability is available from simple, auditable models.\par
+
+\textbf{Work and decisions.} Implement linear regression for fitted slope and remaining duration and multinomial logistic regression for up/down/flat. Score fixed-horizon returns as a separate secondary benchmark. Include train-only constant/majority and a causal persistence reference where well-defined. Build the polynomial comparator required by \S 6, with degree and regularization chosen on development data. Specify feature history, duration positivity, class handling and the trading mapping. Forecast with the same origins and covariate availability that later models will use. Start with slope/duration MAE in native units, directional accuracy, confusion matrix and class-balanced diagnostics. Report development net PnL and drawdown from executable fills under a common timing, cost and slippage policy.\par
+
+\textbf{Deliverables.} Training/evaluation scripts, configs, origin-level predictions and deterministic smoke tests. Produce fold scorecards, residual and duration-error plots, confusion matrices and net equity/drawdown curves. Document naïve reference construction and model selection.\par
+
+\textbf{Depends on.} M2 data and split freeze.\par
+
+\textbf{Acceptance.} One documented run reproduces the scorecard to declared tolerances. Each task has a naïve reference and the appropriate regression baseline. Polynomial and later comparisons share eligible target IDs, source inputs and scoring rules. All reported results are development results, with valid denominators, execution timing and cost assumptions.\par
+
+\clearpage
+
+\pagetitle{PHASE II / B}{Sequence and latent baselines}
+
+\topic{04\quad Test supervised sequence learning with an LSTM}
+
+\textbf{Objective.} Measure the incremental value of ordered history and nonlinear temporal dynamics.\par
+
+\textbf{Work and decisions.} Train a compact LSTM on causal windows for the same immediate-movement outputs. Predefine lookback candidates, loss weights or separate heads, early stopping and a finite laptop-sized tuning budget. Give the linear/polynomial comparison access to the same source history via a documented representation. Compare against the classical baselines and, if feasible, a parameter-conscious nonrecurrent or order ablation using development data.\par
+
+\textbf{Deliverables.} Window loader, LSTM, configs and causal alignment tests. Report learning curves, multi-seed paired fold comparisons, error slices and compute cost.\par
+
+\textbf{Depends on.} M3 scoring and data contract.\par
+
+\textbf{Acceptance.} Window and target alignment tests pass, all matched comparisons use the same forecast IDs, and variance across folds and seeds is visible. Record a conclusion about the value of recurrence and whether model capacity or sample support limits it. Improvement is an empirical outcome.\par
+
+\smallskip\hrule\smallskip
+
+\topic{05\quad Test reconstructive representations with an autoencoder}
+
+\textbf{Objective.} Determine whether reconstructing historical sequences yields transferable trend features before testing predictive embeddings.\par
+
+\textbf{Work and decisions.} Start with a compact sequence AE trained to reconstruct past input windows on training data. Define reconstruction scaling, bottleneck dimension and the downstream training protocol. Use a frozen-encoder probe as the primary representation comparison, with any fine-tuning reported separately. Consider U-Net if warranted by the study design, with checks that skip paths do not bypass the representation being tested. Compare downstream immediate-movement forecasts against a raw-window or raw-OHLCV head and the LSTM with matched forecast IDs and a documented head/input design.\par
+
+\textbf{Deliverables.} AE training and probe code, reconstruction and downstream learning curves, bottleneck comparisons, residual examples and run-cost notes.\par
+
+\textbf{Depends on.} M4 completion and the M3--M4 benchmark record.\par
+
+\textbf{Acceptance.} Train-only reconstruction and downstream split isolation are verified. Reconstruction quality and forecasting utility are scored separately. Document whether reconstruction carries useful trend signal and freeze the AE comparator before JEPA work.\par
+
+\clearpage
+
+\pagetitle{PHASE III}{Predictive representations}
+
+\topic{06\quad Test point-forecast JEPA and isolate representation gains}
+
+\textbf{Objective.} Test whether predicting future embeddings improves immediate-movement forecasts.\par
+
+\textbf{Work and decisions.} Define context and future-target windows, encoders, latent predictor, latent loss and collapse diagnostics. A candidate is a context encoder with a predictor and an EMA target encoder with stopped target gradients. Future windows are training targets with explicit maturity timestamps. At inference, forecast from the context through \(t\). Use matched downstream heads where feasible and run the proposal's raw OHLCV ablation and polynomial comparison. Decide whether a TNC-style comparator is warranted after reviewing the cited work and checking support and compute. Compare the smallest single-asset and SPY/QQQ context settings as separately labeled experiments if feasible.\par
+
+\textbf{Deliverables.} JEPA pretraining and head code, window/maturity tests, latent variance and collapse diagnostics, ablation tables, seed-level development results and resource notes.\par
+
+\textbf{Depends on.} Completed M3--M5 baselines and D07--D09.\par
+
+\textbf{Acceptance.} A test demonstrates that future target windows are unavailable to inference and stay inside permitted training intervals during pretraining. Compare the full model with the required polynomial and raw OHLCV controls on the same task, plus LSTM and AE references. Document evidence for or against incremental value before adding distribution heads.\par
+
+\topic{Literature and scope review}
+Check the proposal's Table 1 claims against the cited primary studies. Stock-JEPA and TS-JEPA motivate future embeddings, TNC motivates a separate contrastive comparison, and Market-1T and LaT-PFN motivate cross-asset or multi-horizon tests. Conditioned flows and MANF motivate flexible densities, while ARTEMIS and the neural Lévy SDE reference motivate continuous-time alternatives. Record task, data, horizon and scoring differences before making comparative claims.
+
+\topic{Required controls}
+Use the polynomial baseline and raw OHLCV prediction head on the same forecast IDs. Use the LSTM and reconstructive autoencoder as additional controls. Report whether any observed gain persists across development folds and seeds, with documented model capacity and tuning cost.
+
+\clearpage
+
+\pagetitle{PHASE IV}{Uncertainty forecasts and final evaluation}
+
+\topic{07\quad Forecast distributions, multiple horizons and volatility envelopes}
+
+\textbf{Objective.} Extend point forecasts into verifiable conditional uncertainty forecasts.\par
+
+\textbf{Work and decisions.} Define the distribution of immediate-movement attributes, then specify later multi-horizon targets and what the envelope covers. Later experiments may include complete subsequent segments. Start with empirical or simple conditional distribution references and quantile or parametric heads. Consider a conditioned flow or neural SDE only after reviewing the literature and demonstrating enough data and compute to estimate added value. Handle discrete duration, flat segments and coherence between direction and slope. Use proper scores matched to outputs, such as log loss/Brier for direction, pinball loss for quantiles and CRPS for continuous marginals with a forecast CDF. For claimed joint forecasts, add a joint scoring rule and check dependence. Evaluate coverage and width together by horizon. Any calibration uses permitted development data with separate fitting and scoring roles.\par
+
+\textbf{Deliverables.} Distribution heads, calibration/evaluation code, fan charts, reliability and coverage plots, interval-width summaries, proper-score comparisons, and illustrative calm/high-volatility cases.\par
+
+\textbf{Depends on.} M6, supported sample size and D10--D11.\par
+
+\textbf{Acceptance.} Forecasts have valid support, ordered quantiles, clear interval semantics and usable coverage denominators. Score each horizon against a simple probabilistic reference on matched forecast IDs. Separate marginal intervals from simultaneous path coverage. Document which Figure 1 capabilities the tested design supports and which require further data or research.\par
+
+\smallskip\hrule\smallskip
+
+\topic{08\quad Run the locked evaluation and deliver the research record}
+
+\textbf{Objective.} Assess generalization and interpret forecasting and trading results jointly.\par
+
+\textbf{Work and decisions.} Freeze model selection, metrics, comparison margins, eligible IDs, costs and slippage, execution/position policy, uncertainty method and regime definitions before opening the test. Run the prespecified evaluation for classical baselines, LSTM, AE, JEPA, the raw-feature ablation and specified distribution forecasts. Pair comparisons by timestamp/forecast ID and account for dependent observations and common SPY/QQQ exposure. Report any preplanned cost or regime sensitivity with support counts.\par
+
+\textbf{Deliverables.} Locked-run manifest, per-origin forecasts and trades, aggregate and regime tables, uncertainty intervals where estimable, equity/drawdown and calibration figures, final report, poster, presentation and reproduction instructions. Include a progress-report snapshot during development at a milestone review.\par
+
+\textbf{Depends on.} M1--M7 completion and a defined evaluation plan (D12--D13).\par
+
+\textbf{Acceptance.} The frozen protocol reproduces the final tables and figures. Report immediate fitted-slope and remaining-duration errors, directional accuracy, net PnL from executable fills, max drawdown, probabilistic scores and coverage for applicable models. Report fixed-horizon return benchmark scores separately. Interpret JEPA's comparison with polynomial regression and the ablations under prespecified criteria. Report negative or inconclusive results and limits on generalization when warranted. Any later exploratory analysis is labeled separately.\par
+
+\clearpage\pagetitle{COMPLETION CHECKLIST}{Milestone checklist}
+Mark each milestone when its completion criteria are met. Record the date and artifact version.
+\checkrow{01}{Forecast specification defined}{Targets, units, horizon, maturity and censoring are defined in worked examples.}
+\checkrow{02}{Data and split protocol frozen}{Snapshots reproduce, boundary tests pass, and history comparison and label stability are documented.}
+\checkrow{03}{Classical baselines reproduced}{Linear, logistic and polynomial benchmarks reproduce on shared forecast IDs.}
+\checkrow{04}{LSTM reviewed}{Causal sequence alignment and paired development results are verified.}
+\checkrow{05}{Autoencoder comparator frozen}{Train-only reconstruction and downstream probe results are reviewed.}
+\checkrow{06}{JEPA and ablations reviewed}{Future inputs are excluded at inference and matched controls are complete.}
+\checkrow{07}{Probabilistic outputs verified}{Distribution support, scoring, coverage and envelope semantics are checked.}
+\checkrow{08}{Final evaluation accepted}{Frozen test results, limitations, report, poster and presentation are reproducible.}
+\topic{Decisions to resolve first}
+Use the immediate-movement label contract. Before baseline training, compare pilot and longer histories, inspect label stability, and document completion, class balance and distinct fitted episodes.
+
+\topic{Review status}
+The first milestone defines the forecast and label specification.
+
+\end{document}

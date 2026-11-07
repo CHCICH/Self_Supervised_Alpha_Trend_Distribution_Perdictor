@@ -1,0 +1,19 @@
+# Previous versions and archives
+/old/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# LaTeX temporary files
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+
+# Environment and secrets
+.env
+.env.*
